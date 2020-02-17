@@ -1,4 +1,3 @@
-import module1 from './modules/module1';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import "../css/style.scss";
