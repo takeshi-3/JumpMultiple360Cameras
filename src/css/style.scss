@@ -1,7 +1,136 @@
+$gray: #cbcbcb;
+$darkGray: #4b4b4b;
+$green: #89C7B6;
+$orange: #F29F05;
+
+/* ----------- base ----------- */
+* {
+    margin: 0;
+    font-size: 16px;
+    font-family: 'Roboto', arial, sans-serif;
+}
+
+div {
+    box-sizing: border-box;
+}
+
+img {
+    display: block;
+    width: 100%;
+}
+
+/* ---------- app style ---------- */
 .app {
-    background-color: black;
+    width: 100%;
+    height: 100%;
+
     &_cont {
-        height: 200px;
-        background-color: red;
+        position: fixed;
+        z-index: 5;
+        top: 0;
+        left: 0;
+        width: 20vw;
+        height: 100%;
+        padding: 20px;
+        background-color: $gray;
+        overflow-y: scroll;
+
+        &_search {
+            position: fixed;
+            z-index: 10;
+            top: 20px;
+            left: 15px;
+            width: 30px;
+            height: auto;
+            transform: rotate(180deg);
+            &:hover {
+                cursor: pointer;
+            }
+        }
+
+        &_input {
+            width: 100%;
+            input[type="text"] {
+                width: calc(100% - 35px);
+                height: 30px;
+                margin-left: 35px;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+            input[type="submit"] {
+                display: none;
+            }
+        }
+
+        &_wrap {
+            width: 100%;
+        }
+
+        &_node {
+            width: 100%;
+            padding: 10px 10px 0;
+            margin: 20px 0;
+            background-color: white;
+            transition: background-color .3s ease;
+            &:hover {
+                cursor: pointer;
+            }
+
+            &_cam {
+                width: 100%;
+                height: 200px;
+                background-color: $darkGray;
+            }
+
+            &_info {
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                max-width: 250px;
+                p {
+                    padding: 5px 0;
+                }
+            }
+
+            &_btn {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            &_sound,
+            &_mic {
+                display: inline-block;
+                width: auto;
+                height: 25px;
+                margin: 5px;
+                margin-right: 10px;
+                color: white;
+                &:hover {
+                    cursor: pointer;
+                }
+            }
+
+            &_del {
+                height: 25px;
+                width: auto;
+                margin-left: 40px;
+                &:hover {
+                    cursor: pointer;
+                }
+            }
+        }
+
+        &_node-view {
+            background-color: $orange;
+            // border: 2px solid $orange;
+        }
+    }
+
+    &_viewer {
+        width: 100%;
+        height: 100vh;
+        background-color: $green;
+        opacity: .5;
     }
 }

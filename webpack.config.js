@@ -5,14 +5,20 @@ const enabledSourceMap = MODE === "development";
 
 module.exports = {
     mode: 'development',    // ['development': create source map, 'production': compress source file]
-    // watch: true,         // detect changes  *[unsoleved]これ使うとbuildが終わらなくなる
+    watch: true,            // detect changes (for interactive development) 
     entry: './src/js/app.js',
     output: {
         filename: 'bundle.js',
-        path: path.join(__dirname, 'public/js')
+        path: path.join(__dirname, 'public/js'),
+        publicPath: "/js/"
+    },
+    devServer: {
+        contentBase: path.join(__dirname, 'public'),
+        watchContentBase: true
     },
     module: {
         rules: [
+            // babel loader
             {
                 test: /\.js$/,
                 exclude: /node_modules/,
@@ -28,6 +34,7 @@ module.exports = {
                     }
                 ]
             },
+            // Sass loader
             {
                 test: /\.scss$/,
                 use: [
@@ -47,6 +54,11 @@ module.exports = {
                         }
                     }
                 ]
+            },
+            // to load & bundle image source from sass
+            {
+                test: /\.(gif|png|jpe?g|svg|ico)$/,
+                loader: "url-loader"
             }
         ]
     }
