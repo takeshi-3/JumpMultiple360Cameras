@@ -6,7 +6,7 @@ const enabledSourceMap = MODE === "development";
 module.exports = {
     mode: 'development',    // ['development': create source map, 'production': compress source file]
     watch: true,            // detect changes (for interactive development) 
-    entry: './src/js/app.js',
+    entry: './src/js/app.tsx',
     output: {
         filename: 'bundle.js',
         path: path.join(__dirname, 'public/js'),
@@ -18,21 +18,21 @@ module.exports = {
     },
     module: {
         rules: [
-            // babel loader
+            // babel loader -> typescript
             {
-                test: /\.js$/,
+                // test: /\.js$/,
+                test: /\.tsx?$/,
                 exclude: /node_modules/,
-                use: [
-                    {
-                        loader: 'babel-loader',
-                        options: {
-                            presets: [
-                                '@babel/preset-env',
-                                '@babel/react'
-                            ]
-                        }
-                    }
-                ]
+                use: {
+                    // loader: 'babel-loader',
+                    loader: "ts-loader",
+                    // options: {
+                    //     presets: [
+                    //         '@babel/preset-env',
+                    //         '@babel/react'
+                    //     ]
+                    // }
+                }
             },
             // Sass loader
             {
@@ -61,5 +61,8 @@ module.exports = {
                 loader: "url-loader"
             }
         ]
+    },
+    resolve: {
+        extensions: [".ts", ".tsx", ".js", ".json"]
     }
-}
+};

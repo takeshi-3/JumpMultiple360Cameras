@@ -1,23 +1,34 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import "../css/style.scss";
 import anime from 'animejs';
 
 /*-------------------------------
   Search Form 
 --------------------------------*/
-class Input extends React.Component {
-    constructor(props) {
+interface InputProps {
+    value: string;
+    onValueChange: (value: string) => void;
+    onSearch: () => void;
+
+}
+
+interface InputState {
+
+}
+
+class Input extends React.Component<InputProps, InputState> {
+    constructor(props: InputProps) {
         super(props);
         this.handleChange = this.handleChange.bind(this);
         this.handleClick = this.handleClick.bind(this);
     }
 
-    handleChange(e) {
+    handleChange(e: React.ChangeEvent<HTMLInputElement>): void {
         this.props.onValueChange(e.target.value);
     }
 
-    handleClick() {
+    handleClick(): void {
         this.props.onSearch();
         event.preventDefault();
     }
@@ -35,8 +46,20 @@ class Input extends React.Component {
 /*--------------------------------
   Node Block on Control Panel
 --------------------------------*/
-class Node extends React.Component {
-    constructor(props) {
+interface NodeProps {
+    name: string;
+    viewing: boolean;
+    onDelete: (name: string) => void;
+    onClick: (name: string) => void;
+}
+
+interface NodeState {
+    sound: boolean;
+    mic: boolean;
+}
+
+class Node extends React.Component<NodeProps, NodeState> {
+    constructor(props: NodeProps) {
         super(props);
         this.state = {
             sound: false,   // sound on/Off
@@ -48,27 +71,27 @@ class Node extends React.Component {
         this.handleClick = this.handleClick.bind(this);
     }
 
-    soundToggle() {
+    soundToggle(): void {
         var soundState = this.state.sound;
         this.setState({sound: !soundState});
     }
 
-    micToggle() {
+    micToggle(): void {
         var micState = this.state.mic;
         this.setState({mic: !micState});
     }
 
-    handleDelete() {
+    handleDelete(): void {
         this.props.onDelete(this.props.name);
     }
 
-    handleClick() {
+    handleClick(): void {
         this.props.onClick(this.props.name);
     }
 
-    render() {
+    render(): JSX.Element {
         return (
-            <div className={"app_cont_node " + (this.props.viewing?'app_cont_node-view':'')} name={this.props.name}>
+            <div className={"app_cont_node " + (this.props.viewing?'app_cont_node-view':'')} id={this.props.name}>
                 <div className="app_cont_node_cam" onClick={this.handleClick}></div>
                 <div className="app_cont_node_info">
                     <p>Name: {this.props.name}</p>
@@ -96,9 +119,20 @@ const controlAnimeStates = {
     hide: {opacity: 0, left: '-20vw', rotate: 0}
 };
 
+interface ControlProps {
+
+}
+
+interface ControlState {
+    value: string;
+    nodes: string[];
+    appear: boolean;
+    viewNode: string;
+}
+
 // Component
-class Control extends React.Component {
-    constructor(props) {
+class Control extends React.Component<ControlProps, ControlState> {
+    constructor(props: ControlProps) {
         super(props);
         this.state = {
             value: '',          // id in search bar
@@ -114,14 +148,14 @@ class Control extends React.Component {
     }
 
     // When strings inputted in Input bar
-    handleValueChange(value) {
+    handleValueChange(value: string): void {
         this.setState({value: value});
     }
 
     // When Search ID submitted
-    handleSearch() {
-        var nodeArray = this.state.nodes.slice();
-        var nodeName = this.state.value;
+    handleSearch(): void {
+        var nodeArray: string[] = this.state.nodes.slice();
+        var nodeName: string = this.state.value;
         nodeArray.push(nodeName);
         this.setState({
             value: '',
@@ -130,11 +164,11 @@ class Control extends React.Component {
     }
 
     // When Toggle Button(->) of Control Panel is pushed
-    handleToggle() {
-        const appear = this.state.appear;
-        const animeState = controlAnimeStates[(appear)?'hide':'show'];
+    handleToggle(): void {
+        const appear: boolean = this.state.appear;
+        const animeState: {[key: string]: any} = controlAnimeStates[(appear)?'hide':'show'];
         // slide animation
-        const controlAnime = anime.timeline();
+        const controlAnime: anime.AnimeTimelineInstance = anime.timeline();
         controlAnime
             .add({
                 targets: '.app_cont',
@@ -153,17 +187,18 @@ class Control extends React.Component {
     }
 
     // When Delete Button(x) in Node block is pushed
-    handleDeleteNode(name) {
+    handleDeleteNode(name: string): void {
         // create new array in which the deleted node excluded.
-        const newNodes = this.state.nodes.filter(item => item !== name);
+        const newNodes: string[] = this.state.nodes.filter(item => item !== name);
 
         // animation
-        const deleteNodeAnime = anime.timeline({
-            targets: '.app_cont_node[name="' + name + '"]',
+        anime({
+            targets: '#' + name,
             easing: 'easeInOutSine', 
-            duration: 200
+            opacity: {value: 0, duration: 200},
+            padding: {value: 0, duration: 200, delay: 200},
+            height: {value: 0, duration: 200, delay: 200}
         });
-        deleteNodeAnime.add({opacity: 0}).add({padding: 0,height: 0});
 
         // when delete animation finished, set new node array
         setTimeout(() => {
@@ -176,13 +211,13 @@ class Control extends React.Component {
     }
 
     // When Node Block clicked -> Jump!
-    handleSwitchNode(name) {
+    handleSwitchNode(name: string): void {
         this.setState({viewNode: name});
     }
 
-    render() {
-        const value = this.state.value;
-        const nodeItems = this.state.nodes.map((name) => 
+    render(): JSX.Element {
+        const value: string = this.state.value;
+        const nodeItems: JSX.Element[] = this.state.nodes.map((name) => 
             <Node 
                 key={name}
                 name={name}
@@ -210,8 +245,16 @@ class Control extends React.Component {
 /*--------------------------------
   Viewer Area
 --------------------------------*/
-class Viewer extends React.Component {
-    render() {
+interface ViewerProps {
+
+}
+
+interface ViewerState {
+
+}
+
+class Viewer extends React.Component<ViewerProps, ViewerState> {
+    render(): JSX.Element {
         return (
             <div className="app_viewer">
             </div>
@@ -222,8 +265,16 @@ class Viewer extends React.Component {
 /*--------------------------------
   App to Manage whole system
 --------------------------------*/
-class App extends React.Component {
-    render() {
+interface AppProps {
+
+}
+
+interface AppState {
+
+}
+
+class App extends React.Component<AppProps, AppState> {
+    render(): JSX.Element {
         return (
             <div className="app">
                 <Control />
