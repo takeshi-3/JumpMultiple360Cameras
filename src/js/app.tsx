@@ -1,196 +1,109 @@
+import Control from './modules/ControlUI';
+import Viewer from './modules/ViewerUI';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import Peer from 'skyway-js';
+import anime from'animejs';
 import "../css/style.scss";
-import anime from 'animejs';
-
-/*-------------------------------
-  Search Form 
---------------------------------*/
-interface InputProps {
-    value: string;
-    onValueChange: (value: string) => void;
-    onSearch: () => void;
-
-}
-
-interface InputState {
-
-}
-
-class Input extends React.Component<InputProps, InputState> {
-    constructor(props: InputProps) {
-        super(props);
-        this.handleChange = this.handleChange.bind(this);
-        this.handleClick = this.handleClick.bind(this);
-    }
-
-    handleChange(e: React.ChangeEvent<HTMLInputElement>): void {
-        this.props.onValueChange(e.target.value);
-    }
-
-    handleClick(): void {
-        this.props.onSearch();
-        event.preventDefault();
-    }
-
-    render() {
-        return (
-            <form className="app_cont_input" onSubmit={(e) => {e.preventDefault();}}>
-                <input type="text" placeholder="Input node ID" value={this.props.value} onChange={this.handleChange} />
-                <input type="submit" value="" onClick={this.handleClick} />
-            </form>
-        );
-    }
-}
 
 /*--------------------------------
-  Node Block on Control Panel
+  App to Manage whole system
 --------------------------------*/
-interface NodeProps {
-    name: string;
-    viewing: boolean;
-    onDelete: (name: string) => void;
-    onClick: (name: string) => void;
+interface AppProps {
+    
 }
 
-interface NodeState {
-    sound: boolean;
-    mic: boolean;
-}
-
-class Node extends React.Component<NodeProps, NodeState> {
-    constructor(props: NodeProps) {
-        super(props);
-        this.state = {
-            sound: false,   // sound on/Off
-            mic: false      // mic on/Off
-        };
-        this.soundToggle = this.soundToggle.bind(this);
-        this.micToggle = this.micToggle.bind(this);
-        this.handleDelete = this.handleDelete.bind(this);
-        this.handleClick = this.handleClick.bind(this);
-    }
-
-    soundToggle(): void {
-        var soundState = this.state.sound;
-        this.setState({sound: !soundState});
-    }
-
-    micToggle(): void {
-        var micState = this.state.mic;
-        this.setState({mic: !micState});
-    }
-
-    handleDelete(): void {
-        this.props.onDelete(this.props.name);
-    }
-
-    handleClick(): void {
-        this.props.onClick(this.props.name);
-    }
-
-    render(): JSX.Element {
-        return (
-            <div className={"app_cont_node " + (this.props.viewing?'app_cont_node-view':'')} id={this.props.name}>
-                <div className="app_cont_node_cam" onClick={this.handleClick}></div>
-                <div className="app_cont_node_info">
-                    <p>Name: {this.props.name}</p>
-                    <p>Res: 0000 x 0000</p>
-                </div>
-                <div className="app_cont_node_btn">
-                    <div className="app_cont_node_audio">
-                        <img className="app_cont_node_sound" src={"../img/sound_" + (this.state.sound ? "on":"off") + ".svg"} onClick={this.soundToggle} />
-                        <img className="app_cont_node_mic" src={"../img/mic_" + (this.state.mic ? 'on' : 'off') + ".svg"} onClick={this.micToggle} />
-                    </div>
-                    <img className="app_cont_node_del" src={"../img/delete.svg"} onClick={this.handleDelete} />
-                </div>
-            </div>
-        );
-    }
-}
-
-/*--------------------------------
-  Control Panel 
-  on the Left of viewer
---------------------------------*/
-// Parameters for Hide & Show the control panel
-const controlAnimeStates = {
-    show: {opacity: 1, left: 0, rotate: 180},
-    hide: {opacity: 0, left: '-20vw', rotate: 0}
-};
-
-interface ControlProps {
-
-}
-
-interface ControlState {
+interface AppState {
     value: string;
     nodes: string[];
-    appear: boolean;
-    viewNode: string;
+    viewing: string;
+    resolutions: {[name: string]: string};
+    peers: {[name: string]: Peer};
+    calls: {[name: string]: MediaConnection};
+    streams: {[name: string]: HTMLVideoElement};
+    dataconnections: {[name: string]: DataConnection};
 }
 
-// Component
-class Control extends React.Component<ControlProps, ControlState> {
-    constructor(props: ControlProps) {
+class App extends React.Component<AppProps, AppState> {
+    constructor(props: AppProps) {
         super(props);
         this.state = {
-            value: '',          // id in search bar
-            nodes: ['init'],    // manage nodes connected
-            appear: true,       // show/hide state of control panel
-            viewNode: 'init'    // the node name now viewing
-        };
-        this.handleSearch = this.handleSearch.bind(this);
-        this.handleValueChange = this.handleValueChange.bind(this);
-        this.handleToggle = this.handleToggle.bind(this);
-        this.handleDeleteNode = this.handleDeleteNode.bind(this);
-        this.handleSwitchNode = this.handleSwitchNode.bind(this);
-    }
-
-    // When strings inputted in Input bar
-    handleValueChange(value: string): void {
-        this.setState({value: value});
-    }
-
-    // When Search ID submitted
-    handleSearch(): void {
-        var nodeArray: string[] = this.state.nodes.slice();
-        var nodeName: string = this.state.value;
-        nodeArray.push(nodeName);
-        this.setState({
             value: '',
-            nodes: nodeArray
+            nodes: [],
+            viewing: '',
+            resolutions: {},
+            peers: {},
+            calls: {},
+            streams: {},
+            dataconnections: {},
+        };
+        this.handlePeerConnection = this.handlePeerConnection.bind(this);
+        this.handlePeerDelete = this.handlePeerDelete.bind(this);
+        this.handlePeerSwitch = this.handlePeerSwitch.bind(this);
+        this.handleValueChange = this.handleValueChange.bind(this);
+        this.handleMuteChange = this.handleMuteChange.bind(this);
+    }
+
+    handlePeerConnection(name: string): void {
+        let peer: Peer = new Peer({
+            key: 'bb5c20fc-fdf4-4db1-b084-d5286215bbb1',
+            debug: 3
         });
+    
+        // Successfully connected Signaling Server
+        peer.on('open',  () => {
+            const newCall = peer.call(name, null, {
+                videoReceiveEnabled: true,
+                audioReceiveEnabled: true
+            });
+    
+            newCall.on('stream', (stream) => {
+                const video = (document.querySelector('#video-' + name) as HTMLVideoElement);
+                video.srcObject = stream;
+                video.muted = true;
+                video.play();
+
+                // allocate stream
+                let streams: {[name: string]: HTMLVideoElement} = Object.create(this.state.streams);
+                streams[name] = video;
+                this.setState({streams: streams});
+
+                // allocate resolution
+                setInterval(() => {
+                    let resolutions: {[name: string]: string} = Object.create(this.state.resolutions);
+                    resolutions[name] = video.videoWidth + ' x ' +  video.videoHeight;
+                    this.setState({resolutions: resolutions});
+                }, 500);
+
+                // set first node
+                if(nodes.length === 1) this.handlePeerSwitch(name);
+            });
+
+
+            // allocate this peer
+            let calls = Object.create(this.state.calls);
+            let peers = Object.create(this.state.peers);
+            let nodes = this.state.nodes.slice();
+            let dConnect: DataConnection = peer.connect(name);
+            const dataconnections = Object.create(this.state.dataconnections);
+            calls[name] = newCall;
+            peers[name] = peer;
+            dataconnections[name] = dConnect;
+            nodes.push(name);
+            this.setState({calls: calls, peers: peers, nodes: nodes, dataconnections: dataconnections});
+        });
+
+        // Failed to connect signaling server
+        peer.on('error', (err) => {
+            console.log(err.message);
+            alert('peer ' + name + ' was not found');
+            this.handlePeerDelete(name);
+        });
+
+        this.setState({value: ''});
     }
 
-    // When Toggle Button(->) of Control Panel is pushed
-    handleToggle(): void {
-        const appear: boolean = this.state.appear;
-        const animeState: {[key: string]: any} = controlAnimeStates[(appear)?'hide':'show'];
-        // slide animation
-        const controlAnime: anime.AnimeTimelineInstance = anime.timeline();
-        controlAnime
-            .add({
-                targets: '.app_cont',
-                left: animeState.left,
-                duration: 200,
-                easing: 'easeInOutCubic'
-            })
-            .add({
-                targets: '.app_cont_search',
-                rotate: animeState.rotate,
-                duration: 200,
-                easing: 'linear',
-            }, 0);
-        // change the state of appearance
-        this.setState({appear: !appear});
-    }
-
-    // When Delete Button(x) in Node block is pushed
-    handleDeleteNode(name: string): void {
-        // create new array in which the deleted node excluded.
-        const newNodes: string[] = this.state.nodes.filter(item => item !== name);
-
+    handlePeerDelete(name: string): void {
         // animation
         anime({
             targets: '#' + name,
@@ -200,85 +113,66 @@ class Control extends React.Component<ControlProps, ControlState> {
             height: {value: 0, duration: 200, delay: 200}
         });
 
-        // when delete animation finished, set new node array
+        // when delete animation finished, remove node states
         setTimeout(() => {
-            this.setState({nodes: newNodes});
+            let calls: {[name: string]: MediaConnection} = Object.create(this.state.calls);
+            let peers: {[name: string]: Peer} = Object.create(this.state.peers);
+            let nodes: string[] = this.state.nodes.filter(item => item !== name);
+            let streams: {[name: string]: HTMLVideoElement} = Object.create(this.state.streams);
+            let dataconnections: {[name: string]: DataConnection} = Object.create(this.state.dataconnections);
+            calls[name].close();
+            peers[name].disconnect();
+            dataconnections[name].close();
+            delete calls.name;
+            delete peers.name;
+            delete streams.name;
+            delete dataconnections.name;
+            this.setState({calls: calls, peers: peers, nodes: nodes, streams: streams, dataconnections: dataconnections});
+
             // if viewer deleted current viewing node, the viewer automatically switched to the next node.
-            if(name === this.state.viewNode) {
-                this.setState({viewNode: newNodes[0]});
+            if(name === this.state.viewing && nodes.length > 0) {
+                if(nodes.length > 0) this.handlePeerSwitch(this.state.nodes[0]);
             }
         }, 380);
     }
 
     // When Node Block clicked -> Jump!
-    handleSwitchNode(name: string): void {
-        this.setState({viewNode: name});
+    handlePeerSwitch(name: string): void {
+        const prevViewing: string = this.state.viewing;
+        const dataconnections: {[name: string]: DataConnection} = Object.create(this.state.dataconnections);
+        dataconnections[prevViewing].send(JSON.stringify({"behere": false}));
+        dataconnections[name].send(JSON.stringify({"behere":true}));
+        this.setState({viewing: name});
     }
 
-    render(): JSX.Element {
-        const value: string = this.state.value;
-        const nodeItems: JSX.Element[] = this.state.nodes.map((name) => 
-            <Node 
-                key={name}
-                name={name}
-                onDelete={this.handleDeleteNode}
-                onClick={this.handleSwitchNode}
-                viewing={(name === this.state.viewNode)? true : false}
-            />
-        );
-        return (
-            <div className="app_cont">
-                <img src="../img/arrow.svg" className="app_cont_search" onClick={this.handleToggle} />
-                <div className="app_cont_wrap">
-                    <Input 
-                        value={value}
-                        onValueChange={this.handleValueChange}
-                        onSearch={this.handleSearch}
-                    />
-                    {nodeItems}
-                </div>
-            </div>
-        );
+    handleValueChange(value: string): void {
+        this.setState({value: value});
     }
-}
 
-/*--------------------------------
-  Viewer Area
---------------------------------*/
-interface ViewerProps {
-
-}
-
-interface ViewerState {
-
-}
-
-class Viewer extends React.Component<ViewerProps, ViewerState> {
-    render(): JSX.Element {
-        return (
-            <div className="app_viewer">
-            </div>
-        );
+    handleMuteChange(name: string) {
+        const streams = Object.create(this.state.streams);
+        streams[name].muted = !streams[name].muted;
+        this.setState({streams: streams});
     }
-}
 
-/*--------------------------------
-  App to Manage whole system
---------------------------------*/
-interface AppProps {
-
-}
-
-interface AppState {
-
-}
-
-class App extends React.Component<AppProps, AppState> {
     render(): JSX.Element {
         return (
             <div className="app">
-                <Control />
-                <Viewer />
+                <Control 
+                    viewing={this.state.viewing}
+                    nodes={this.state.nodes}
+                    value={this.state.value}
+                    resolutions={this.state.resolutions}
+                    onSearch={this.handlePeerConnection}
+                    onNodeJump={this.handlePeerSwitch}
+                    onNodeDelete={this.handlePeerDelete}
+                    onValueChange={this.handleValueChange}
+                    onMuteChange={this.handleMuteChange}
+                />
+                <Viewer
+                    viewing={this.state.viewing}
+                    viewerVideo={this.state.streams[this.state.viewing]}
+                />
             </div>
         );
     }
@@ -291,3 +185,22 @@ ReactDOM.render(
     <App />,
     document.getElementById('root')
 );
+
+var localStream: MediaStream = null;
+const getMedia = (): void => {
+    const constraints: MediaStreamConstraints = {
+        audio: false,
+        video: {
+            width: {ideal: 3008},
+            height: {ideal: 1504}
+        }
+    };
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then((stream) => {
+            (document.querySelector('.app_viewer_video') as HTMLVideoElement).srcObject = stream;
+            localStream = stream;
+        }).catch((error) => {
+            console.error('mediaDevices.getUserMedia() error:', error);
+            return;
+        });
+}

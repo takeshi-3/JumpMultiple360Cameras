@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/skyway": "0.0.29",
     "css-loader": "^3.4.2",
     "sass": "^1.25.0",
     "sass-loader": "^8.0.2",
@@ -27,6 +28,8 @@
     "@types/react-dom": "^16.9.5",
     "animejs": "^3.1.0",
     "react": "^16.12.0",
-    "react-dom": "^16.12.0"
+    "react-dom": "^16.12.0",
+    "skyway-js": "^2.0.5",
+    "three": "^0.113.2"
   }
 }
